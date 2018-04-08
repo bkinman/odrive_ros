@@ -1,0 +1,17 @@
+joint0:
+  uuid: '0x313832393336510e004a0044L'
+  motor_number: 0
+  encoder_cpr: 800
+  index_count: -1
+  reduction: 3.75
+  min_angle: deg(-130)
+  max_angle: deg(130)
+
+joint1: 
+  uuid: '0x303339373235510a00330045L'
+  motor_number: 0
+  encoder_cpr: 800
+  index_count: -1
+  reduction: 3.75
+  min_angle: deg(-130)
+  max_angle: deg(130)

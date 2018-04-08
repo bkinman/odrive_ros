@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+
+""" Python ROS node for the ODrive motor controller """
+
+import rospy
+import math
+import re
+
+from odrive_ros.odrive_controller import *
+from odrive_ros.msg import JointAngleCommand
+
+
+class ODriveJointPositionController(object):
+    """ ODrive Position Controller Node """
+
+    def __init__(self, param_base):
+
+        self.uuid = rospy.get_param(param_base+'/uuid')
+        self.motor_number = rospy.get_param(param_base + '/motor_number')
+        self.min_angle = rospy.get_param(param_base + '/min_angle')
+        self.max_angle = rospy.get_param(param_base + '/max_angle')
+        self.encoder_cpr = rospy.get_param(param_base + '/encoder_cpr')
+        self.reduction = rospy.get_param(param_base + '/reduction')
+
+        self.controller = controller_for_uuid(self.uuid)
+        if self.controller is None:
+            raise Exception('Unable to find an ODrive Controller (is it plugged in?)')
+
+        self.motor = getattr(self.controller,'motor'+str(self.motor_number))
+
+        self.ja_cmd_sub_ = rospy.Subscriber(param_base + '/cmd_joint_angle', JointAngleCommand, self.ja_cmd_cb)
+
+    def ja_cmd_cb(self, ja_cmd):
+        encoder_pos_setpoint = (ja_cmd.position_setpoint/(2*math.pi))*self.encoder_cpr
+        encoder_pos_setpoint *= self.reduction
+        encoder_pos_setpoint *= 4 #I'm not sure where this comes from, seems like an odrive peculiarity.
+        self.motor.set_pos_setpoint(encoder_pos_setpoint, ja_cmd.velocity, ja_cmd.effort)
+
+
+def get_joint_param_bases():
+    joints = set()
+    pattern = re.compile(rospy.get_name()+r'/joint(\d)')
+
+    for param_name in rospy.get_param_names():
+        match = pattern.match(param_name)
+        if match:
+            joints.add(match.group(0))
+
+    return joints
+
+if __name__ == '__main__':
+    rospy.init_node('odrive_joint_position_controller_node')
+try:
+    controllers = []
+    for base in get_joint_param_bases():
+        odn = ODriveJointPositionController(base)
+        controllers.append(odn)
+
+    # odn = ODriveJointPositionController('joint0', 0x313832393336510e004a0044L) #old odrive
+    #odn = ODriveJointPositionController('joint0', 0x303339373235510a00330045L) #new odrive
+    rospy.spin()
+except rospy.ROSInterruptException:
+    pass

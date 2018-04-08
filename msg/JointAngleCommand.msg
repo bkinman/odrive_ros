@@ -1,0 +1,3 @@
+float64 position_setpoint
+float64 velocity
+float64 effort

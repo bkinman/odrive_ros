@@ -1,0 +1,6 @@
+<launch>
+  <node name="odrive" pkg="odrive_ros" type="odrive_node">
+    <rosparam command="load" file="$(find odrive_ros)/config/joint_configs.yaml" />
+  </node>
+</launch>
+ 
